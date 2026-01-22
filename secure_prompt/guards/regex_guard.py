@@ -1,67 +1,67 @@
 from dataclasses import dataclass
-from typing import Optional
+from secure_prompt.core.base import BaseResult
 import re
 
 
 GAP_WORDS = 6
 
 @dataclass
-class RegexResult:
-    is_jailbreak: bool
-    rule: Optional[str]
-    matched_text: Optional[str]
+class RegexResult(BaseResult):
+    pass
 
 
 LEXEMES = {
     "override1": [
-        "ignore", "bypass", "disable", "forget", "skip", "override", "neglect",
+        "ignore", "bypass", "disable", "forget", "skip", "override", "neglect", "comply",
         "circumvent", "avoid", "disregard", "omit", "suspend", "ignor", "erase",
         "игнор", "игнорируй", "проигнорируй", "обойди", "обходи", "действуй",
         "забудь", "не учитывай", "пропусти", "отмени", "сними", "отключи", "не обращай внимания"
     ],
     "override2": [
-        "rules", "instructions", "policies", "safety", "limitations",
-        "restrictions", "constraints", "filters", "guardrails",
+        "rules", "instructions", "policies", "safety", "limitations", "moderation",
+        "restrictions", "constraints", "filters", "guardrails", "policy",
         "правила", "инструкции", "ограничения", "фильтры", "блокировки", "политику",
         "политики", "рамки", "запреты", "всё выше", "все выше", "безопасность", "безопасности"
     ],
 
     "freedom1": [
         "say", "tell", "mean", "reveal", "show", "display", "print", "dump", "describe", "explain", "list", "output",
-        "обойди", "обходи", "действуй",
-        "ответь", "объясни", "расскажи", "опиши", "отвечай"
+        "обойди", "обходи", "действуй", "act", "do", "делать", "отвечать", "говорить", "ответить",
+        "ответь", "объясни", "расскажи", "опиши", "отвечай", "говори"
     ],
     "freedom2": [
         "свободно", "честно", "без ограничений",
-        "без фильтров", "откровенно", "freely", "honestly", "without limits", "without restrictions",
-        "unfiltered", "openly", "no constraints"
+        "без фильтров", "откровенно", "freely", "honestly", "without limits", "without restrictions", "without limitations",
+        "unfiltered", "openly", "without constraints", "without filters", "fully", "completely", "totally", "absolutely",
+        "no limits", "no restrictions", "no limitations", "no filters", "no constraints"
     ],
 
     "roles1": [
-        "act", "behave", "pretend", "simulate", "assume",
+        "act", "behave", "pretend", "simulate", "assume", "become",
         "roleplay", "imagine", "consider yourself", "play",
-        "действуй", "веди себя", "притворись",
-        "считай себя", "сыграй", "стань", "представь", "поиграй"
+        "действуй", "веди себя", "притворись", "отвечай",
+        "считай себя", "сыграй", "стань", "представь", "поиграй", "предположи"
     ],
     "roles2": [
-        "system", "developer", "admin", "administrator", "owner",
-        "root", "maintainer", "engineer", "hacker", "bad", "evil"
-        "система", "разработчик", "плохим", "злым", "негативным", "злодей", "злодеем"
+        "developer", "admin", "administrator", "owner", "ии без ограничений", "ии без фильтров",
+        "root", "maintainer", "engineer", "hacker", "bad", "evil", "unresponsive", "unrestricted",
+        "система", "разработчик", "плохим", "злым", "негативным", "злодей",
         "владелец", "создатель", "хакер", "администратор"
     ],
 
     "system_prompt1": [
         "reveal", "show", "display", "print", "dump", "give",
         "describe", "explain", "list", "output", "say", "tell",
-        "покажи", "раскрой", "выведи", "опиши", "расскажи"
-        "объясни", "перечисли", "дай"
+        "покажи", "раскрой", "выведи", "опиши", "расскажи", "напиши", "отправь",
+        "объясни", "перечисли", "дай", "скажи", "выдай"
     ],
     "system_prompt2": [
-        "system prompt", "initial prompt", "internal prompt",
-        "system instructions", "rules",
-        "hidden prompt", "configuration",
-        "системный промпт", "системные инструкции",
+        "system prompt", "initial prompt", "internal prompt", "initial message", "safety",
+        "system instructions", "rules", "prompt", "system message", "internal setup",
+        "hidden prompt", "configuration", "промпт", "системных инструкций", "модерация", "модерацию",
+        "системный промпт", "системные инструкции", "внутренние инструкции",
         "правила", "начальные инструкции", "ограничения", "конфигурацию",
+        "скрытое сообщение", "скрытый промпт", "скрытые инструкции"
     ],
 }
 
@@ -109,18 +109,20 @@ JAILBREAK_PATTERNS = {
     ),
 }
 
-def regex_guard(user_prompt: str) -> list[RegexResult]:
+def regex_guard(user_prompt: str) -> RegexResult:
     text = user_prompt
-    results = []
+    rules = []
 
     for rule_name, pattern in JAILBREAK_PATTERNS.items():
         match = pattern.search(text)
         if match:
-            results.append(RegexResult(
-                is_jailbreak=True,
-                rule=rule_name,
-                matched_text=match.group(0)
-            ))
-
-    return results
-
+            rules.append((rule_name, str(match.group(0))))
+    if not rules:
+        return RegexResult(
+            is_jailbreak=False,
+            rules=[]
+        )
+    return RegexResult(
+        is_jailbreak=True,
+        rules=rules
+    )
