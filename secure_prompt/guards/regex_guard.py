@@ -1,128 +1,116 @@
+import re
 from dataclasses import dataclass
 from secure_prompt.core.base import BaseResult
-import re
+from data.lexical import LEXEMES
 
-
-GAP_WORDS = 6
 
 @dataclass
 class RegexResult(BaseResult):
     pass
 
 
-LEXEMES = {
-    "override1": [
-        "ignore", "bypass", "disable", "forget", "skip", "override", "neglect", "comply",
-        "circumvent", "avoid", "disregard", "omit", "suspend", "ignor", "erase",
-        "игнор", "игнорируй", "проигнорируй", "обойди", "обходи", "действуй",
-        "забудь", "не учитывай", "пропусти", "отмени", "сними", "отключи", "не обращай внимания"
-    ],
-    "override2": [
-        "rules", "instructions", "policies", "safety", "limitations", "moderation",
-        "restrictions", "constraints", "filters", "guardrails", "policy",
-        "правила", "инструкции", "ограничения", "фильтры", "блокировки", "политику",
-        "политики", "рамки", "запреты", "всё выше", "все выше", "безопасность", "безопасности"
-    ],
+class RegexGuard:
+    def __init__(self):
+        self.gap_config = {
+            "override": 6,
+            "freedom": 4,
+            "roleplay": 5,
+            "system": 7
+        }
 
-    "freedom1": [
-        "say", "tell", "mean", "reveal", "show", "display", "print", "dump", "describe", "explain", "list", "output",
-        "обойди", "обходи", "действуй", "act", "do", "делать", "отвечать", "говорить", "ответить",
-        "ответь", "объясни", "расскажи", "опиши", "отвечай", "говори"
-    ],
-    "freedom2": [
-        "свободно", "честно", "без ограничений",
-        "без фильтров", "откровенно", "freely", "honestly", "without limits", "without restrictions", "without limitations",
-        "unfiltered", "openly", "without constraints", "without filters", "fully", "completely", "totally", "absolutely",
-        "no limits", "no restrictions", "no limitations", "no filters", "no constraints"
-    ],
+        # Веса для разных типов связок
+        self.pattern_weights = {
+            "override": 1.0,
+            "system": 0.9,
+            "roleplay": 0.8,
+            "freedom": 0.7
+        }
+        self.patterns = self._build_patterns()
+        self.dangerous = self._build_dangerous()
 
-    "roles1": [
-        "act", "behave", "pretend", "simulate", "assume", "become",
-        "roleplay", "imagine", "consider yourself", "play",
-        "действуй", "веди себя", "притворись", "отвечай",
-        "считай себя", "сыграй", "стань", "представь", "поиграй", "предположи"
-    ],
-    "roles2": [
-        "developer", "admin", "administrator", "owner", "ии без ограничений", "ии без фильтров",
-        "root", "maintainer", "engineer", "hacker", "bad", "evil", "unresponsive", "unrestricted",
-        "система", "разработчик", "плохим", "злым", "негативным", "злодей",
-        "владелец", "создатель", "хакер", "администратор"
-    ],
+    def _build_patterns(self):
+        """Строит оптимизированные regex паттерны"""
+        patterns = {}
 
-    "system_prompt1": [
-        "reveal", "show", "display", "print", "dump", "give",
-        "describe", "explain", "list", "output", "say", "tell",
-        "покажи", "раскрой", "выведи", "опиши", "расскажи", "напиши", "отправь",
-        "объясни", "перечисли", "дай", "скажи", "выдай"
-    ],
-    "system_prompt2": [
-        "system prompt", "initial prompt", "internal prompt", "initial message", "safety",
-        "system instructions", "rules", "prompt", "system message", "internal setup",
-        "hidden prompt", "configuration", "промпт", "системных инструкций", "модерация", "модерацию",
-        "системный промпт", "системные инструкции", "внутренние инструкции",
-        "правила", "начальные инструкции", "ограничения", "конфигурацию",
-        "скрытое сообщение", "скрытый промпт", "скрытые инструкции"
-    ],
-}
+        # 1. Основные связки по категориям
+        for category in LEXEMES["actions"].keys():
+            actions = '|'.join(re.escape(word) for word in LEXEMES["actions"][category])
+            targets = '|'.join(re.escape(word) for word in LEXEMES["targets"][category])
+            gap = self.gap_config[category]
 
+            # Основной паттерн: действие + [gap] + цель
+            patterns[f"{category}_main"] = re.compile(
+                rf'\b({actions})\b'  # Действие
+                rf'{self._simple_gap(gap)}'  # Динамический gap
+                rf'.*?\b({targets})\b',  # Цель
+                re.IGNORECASE | re.DOTALL
+            )
 
-def gap(max_words: int = 4) -> str:
-    return rf"\s+(?:\S+\s+){{0,{max_words}}}"
+            # Обратный паттерн: цель + [gap] + действие
+            patterns[f"{category}_reverse"] = re.compile(
+                rf'\b({targets})\b'  # Цель
+                rf'{self._simple_gap(gap)}'  # Динамический gap
+                rf'.*?\b({actions})\b',  # Действие
+                re.IGNORECASE | re.DOTALL
+            )
 
-
-def group(words: list[str]) -> str:
-    escaped = words  # map(re.escape, words)
-    return "(" + "|".join(escaped) + ")"
-
-
-JAILBREAK_PATTERNS = {
-    # Override / ignore instructions
-    "override_rules": re.compile(
-        rf"{group(LEXEMES['override1'])}"
-        rf"{gap(GAP_WORDS)}"
-        rf"{group(LEXEMES['override2'])}",
-        re.I
-    ),
-
-    # Freedom framing / no limits
-    "freedom_farming": re.compile(
-        rf"{group(LEXEMES['freedom1'])}"
-        rf"{gap(GAP_WORDS)}"
-        rf"{group(LEXEMES['freedom2'])}",
-        re.I
-    ),
-
-    # Role manipulation
-    "role_manipulation": re.compile(
-        rf"{group(LEXEMES['roles1'])}"
-        rf"{gap(GAP_WORDS)}"
-        rf"{group(LEXEMES['roles2'])}",
-        re.I
-    ),
-
-    # System prompt / internals extraction
-    "system_prompt_extraction": re.compile(
-        rf"{group(LEXEMES['system_prompt1'])}"
-        rf"{gap(GAP_WORDS)}"
-        rf"{group(LEXEMES['system_prompt2'])}",
-        re.I
-    ),
-}
-
-def regex_guard(user_prompt: str) -> RegexResult:
-    text = user_prompt
-    rules = []
-
-    for rule_name, pattern in JAILBREAK_PATTERNS.items():
-        match = pattern.search(text)
-        if match:
-            rules.append((rule_name, str(match.group(0))))
-    if not rules:
-        return RegexResult(
-            is_jailbreak=False,
-            rules=[]
+        # 2. Комбинированные паттерны (межкатегориальные)
+        # Например: "ignore" + "system prompt" (override + system)
+        patterns["override_system"] = re.compile(
+            rf'\b({"|".join(re.escape(w) for w in LEXEMES["actions"]["override"])})\b'
+            rf'{self._simple_gap(8)}'
+            rf'.*?\b({"|".join(re.escape(w) for w in LEXEMES["targets"]["system"])})\b',
+            re.IGNORECASE | re.DOTALL
         )
-    return RegexResult(
-        is_jailbreak=True,
-        rules=rules
-    )
+
+        # "act as" + "without limits" (roleplay + freedom)
+        patterns["roleplay_freedom"] = re.compile(
+            rf'\b({"|".join(re.escape(w) for w in LEXEMES["actions"]["roleplay"])})\b'
+            rf'{self._simple_gap(6)}'
+            rf'.*?\b({"|".join(re.escape(w) for w in LEXEMES["targets"]["freedom"])})\b',
+            re.IGNORECASE | re.DOTALL
+        )
+        return patterns
+
+    @staticmethod
+    def _build_dangerous():
+        dangerous = []
+        for category_dict in LEXEMES["targets"].values():
+            dangerous.extend(category_dict)
+        return dangerous
+
+    @staticmethod
+    def _simple_gap(max_words: int = 4) -> str:
+        """Упрощенный gap для совместимости с вашим кодом"""
+        return rf'(?:\W+\w+){{0,{max_words}}}'
+
+    def detect(self, text: str) -> RegexResult:
+        """Основная функция детекции"""
+        if not text or len(text.strip()) < 3:
+            return RegexResult(is_jailbreak=False, rules=[])
+
+        rules_detected = []
+        is_jailbreak = False
+
+        # 1. Проверка основных паттернов
+        for pattern_name, pattern in self.patterns.items():
+            match = pattern.search(text)
+            if match:
+                rules_detected.append((pattern_name, match.group(0)))
+
+        # 2. Опасные слова
+        found_words = []
+        for word in set(self.dangerous):  # Уникальные слова
+            if word in text:
+                found_words.append(word)
+
+        if len(found_words) >= 4:
+            rules_detected.append(("MULTIPLE_DANGEROUS_WORDS", ",".join(found_words)))
+
+        if len(rules_detected) > 0:
+            is_jailbreak = True
+
+        return RegexResult(
+            is_jailbreak=is_jailbreak,
+            rules=rules_detected,
+        )

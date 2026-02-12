@@ -1,8 +1,9 @@
-from secure_prompt.core.decision import decide
+from secure_prompt.core.decision import HybridGuard
 
 
 if __name__ == "__main__":
+    hybrid = HybridGuard()
     while True:
         text = input(">>> ")
-        decision = decide(text)
+        decision = hybrid.decide(text)
         print(decision)

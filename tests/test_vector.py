@@ -1,8 +1,8 @@
-import pytest
 import os
+import pytest
 from pathlib import Path
 from dotenv import load_dotenv
-from secure_prompt.core.decision import HybridGuard
+from secure_prompt.guards.vector_guard import VectorGuard
 
 
 load_dotenv()
@@ -13,13 +13,13 @@ with open(DATA_DIR / os.getenv("JAILBREAK_DATA_PATH"), "r") as f:
 with open(DATA_DIR / os.getenv("BENIGN_DATA_PATH"), "r") as f:
     BENIGN = f.readlines()
 
-hybrid = HybridGuard()
+detector = VectorGuard(threshold=3.075)
 @pytest.mark.parametrize("text", JAILBREAK)
 def test_jailbreak(text):
-    decision = hybrid.decide(text)
-    assert decision.verdict == "BLOCK"
+    decision = detector.detect(text)
+    assert decision.is_jailbreak
 
 @pytest.mark.parametrize("text", BENIGN)
 def test_safe(text):
-    decision = hybrid.decide(text)
-    assert decision.verdict == "ALLOW"
+    decision = detector.detect(text)
+    assert not decision.is_jailbreak
