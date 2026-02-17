@@ -98,6 +98,7 @@ def preprocess(texts: list[str], homoglyphs_alph=False):
         text = normalize_punctuation(text)
         text = normalize_spacing(text)
         text = normalize_whitespace(text)
+        text = normalize_homoglyphs(text)
         norm = text
         if homoglyphs_alph:
             lat_canon = normalize_homoglyphs_k_l(norm)

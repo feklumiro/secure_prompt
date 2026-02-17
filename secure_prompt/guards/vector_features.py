@@ -11,6 +11,10 @@ from sentence_transformers import SentenceTransformer
 from secure_prompt.core.scoring import VECTOR_JAIL_SCORE
 from data.lexical import VECTOR_TEMPLATES
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 @dataclass
 class VectorResult:
@@ -23,7 +27,7 @@ class VectorResult:
 
 
 class VectorFeatureExtractor:
-    MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    MODEL_NAME = os.getenv("VECTOR_MODEL_NAME")
 
     def __init__(
             self,

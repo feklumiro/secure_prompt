@@ -18,7 +18,7 @@ class DecisionCore:
     def __init__(self, use_vector: bool = True):
         self.jail_score = PIPELINE_POLICY[bool(use_vector)]
         self.logger = SecurityLogger()
-        self.guard = MLGuard(use_vector=use_vector)
+        self.guard = MLGuard(threshold=self.jail_score, use_vector=use_vector)
 
     def _apply_policy(self, score: float) -> str:
         if score >= self.jail_score:

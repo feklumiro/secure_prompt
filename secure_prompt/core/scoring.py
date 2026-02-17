@@ -1,3 +1,7 @@
-ML_JAIL_SCORE = 0.7847
-VECTOR_JAIL_SCORE = 3.736
-PIPELINE_POLICY = (0.5845, 0.7060)  # (~89.5%, ~97.9%)
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+ML_JAIL_SCORE = float(os.getenv("ML_JAIL_SCORE"))
+VECTOR_JAIL_SCORE = float(os.getenv("VECTOR_JAIL_SCORE"))
+PIPELINE_POLICY = (float(os.getenv("PP1")), float(os.getenv("PP2")))  # (~89.5%, ~97.9%)
