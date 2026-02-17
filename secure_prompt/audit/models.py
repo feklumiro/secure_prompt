@@ -1,18 +1,14 @@
-from dataclasses import dataclass, field
-from typing import List
+from dataclasses import dataclass
 import hashlib
 
 
 @dataclass
 class SecurityEvent:
     timestamp: str
-    event_type: str           # input_check | response_check
-    decision: str             # allow | block
-    score: int
-
-    matched_guards: List[str] = field(default_factory=list)
-    matched_rules: List[str] = field(default_factory=list)
-    matched_variants: List[str] = field(default_factory=list)
+    event_type: str
+    decision: str
+    score: float
+    reason: list[float]
 
     prompt_hash: str = ""
 

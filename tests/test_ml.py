@@ -18,16 +18,14 @@ with open(DATA_DIR / os.getenv("JAILBREAK_DATA_PATH"), "r") as f:
 with open(DATA_DIR / os.getenv("BENIGN_DATA_PATH"), "r") as f:
     BENIGN = f.readlines()
 
-
+ml = MLGuard(use_vector=False)
 # ============== JAILBREAK TEST ==============
 @pytest.mark.parametrize("text", JAILBREAK)
 def test_jailbreak(text):
-    norm = preprocess(text)
-    for i in norm:
-        ml = MLGuard()
-        ml_result = ml.detect(norm[i])
-        print("JLB", norm[i], ml_result)
-        if ml_result.is_jailbreak:
+    res = ml.detect(preprocess([text]))
+    for i in res:
+        print(res)
+        if i.is_jailbreak:
             assert True
             return
     assert False
@@ -36,11 +34,8 @@ def test_jailbreak(text):
 # ============== BENIGN TEST ==============
 @pytest.mark.parametrize("text", BENIGN)
 def test_benign(text):
-    norm = preprocess(text)
-    for i in norm:
-        ml = MLGuard()
-        ml_result = ml.detect(norm[i])
-        print("BNG", norm[i], ml_result)
-        if ml_result.is_jailbreak:
-            assert False
-    assert True
+    res = ml.detect(preprocess([text]))
+    for i in res:
+        print(res)
+        assert not i.is_jailbreak
+    return True

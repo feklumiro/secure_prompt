@@ -18,6 +18,9 @@ HOMOGLYPH_MAP_L_K = {
     "a": "а", "c": "с", "e": "е", "o": "о", "y": "у", "k": "к", "x": "х", "p": "р"
 }
 
+HOMOGLYPH_MAP = {
+    "0": "o", "1": "i", "3": "e"
+}
 
 def try_decode_base64(text: str) -> str:
     stripped = text.strip()
@@ -27,7 +30,6 @@ def try_decode_base64(text: str) -> str:
 
     try:
         decoded = base64.b64decode(stripped, validate=True).decode("utf-8")
-        # Возвращает декодированный текст при количестве печатаемых символов >= 90% от всего текста
         if sum(c.isprintable() for c in decoded) / len(decoded) >= 0.9:
             return decoded
     except ValueError:
@@ -74,6 +76,10 @@ def normalize_whitespace(text: str) -> str:
     return text.strip()
 
 
+def normalize_homoglyphs(text: str) -> str:
+    return "".join(HOMOGLYPH_MAP.get(c, c) for c in text)
+
+
 def normalize_homoglyphs_k_l(text: str) -> str:
     return "".join(HOMOGLYPH_MAP_K_L.get(c, c) for c in text)
 
@@ -82,16 +88,21 @@ def normalize_homoglyphs_l_k(text: str) -> str:
     return "".join(HOMOGLYPH_MAP_L_K.get(c, c) for c in text)
 
 
-def preprocess(text: str) -> dict:
-    raw = text
-    text = try_decode_base64(text)
-    text = text.lower()
-    text = normalize_unicode(text)
-    text = remove_zero_width(text)
-    text = normalize_punctuation(text)
-    text = normalize_spacing(text)
-    text = normalize_whitespace(text)
-    norm = text
-    lat_canon = normalize_homoglyphs_k_l(norm)
-    cyr_canon = normalize_homoglyphs_l_k(norm)
-    return {"raw": raw, "normalized": norm, "latin_canonical": lat_canon, "cyrillic_canon": cyr_canon}
+def preprocess(texts: list[str], homoglyphs_alph=False):
+    result = []
+    for raw in texts:
+        text = try_decode_base64(raw)
+        text = text.lower()
+        text = normalize_unicode(text)
+        text = remove_zero_width(text)
+        text = normalize_punctuation(text)
+        text = normalize_spacing(text)
+        text = normalize_whitespace(text)
+        norm = text
+        if homoglyphs_alph:
+            lat_canon = normalize_homoglyphs_k_l(norm)
+            cyr_canon = normalize_homoglyphs_l_k(norm)
+            result.append((norm, lat_canon, cyr_canon))
+        else:
+            result.append(norm)
+    return result

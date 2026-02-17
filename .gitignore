@@ -9,6 +9,7 @@ __pycache__/
 # Data
 data/
 roc-auc*
+*regex*
 *.pkl
 
 #Logging

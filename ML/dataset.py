@@ -1,7 +1,6 @@
 import csv
 import os
 
-import re
 import numpy as np
 from collections import Counter
 
@@ -12,6 +11,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 from secure_prompt.core.preprocess import preprocess
+from secure_prompt.guards.vector_features import VectorFeatureExtractor
 from data.lexical import LEXEMES
 
 from dotenv import load_dotenv
@@ -20,9 +20,7 @@ load_dotenv()
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
 
-def extract_features(text: str) -> List[float]:
-    text = preprocess(text)["normalized"]
-
+def extract_features_static(text: str) -> List[float]:
     # -------- FEATS #1 -----------------
 
     char_counter = Counter(text.lower())
@@ -88,6 +86,24 @@ def extract_features(text: str) -> List[float]:
 
     return features
 
+class FeatureExtractor:
+    def __init__(self, init_vector=True):
+        self.vector_feats_extractor = None
+        if init_vector:
+            self.vector_feats_extractor = VectorFeatureExtractor()
+
+    def extract_features(self, texts: List[str], use_vector: bool = False) -> List[List[float]]:
+        result = []
+        # -------- FEATS #4 -----------------
+        v_feats = [[]] * len(texts)
+        if use_vector:
+            if not self.vector_feats_extractor:
+                self.vector_feats_extractor = VectorFeatureExtractor()
+            v_feats = self.vector_feats_extractor.extract_features_batch(texts)
+        for i, text in enumerate(texts):
+            result.append(extract_features_static(text) + v_feats[i])
+        return result
+
 
 class DatasetLoader:
     def __init__(self, data_dir: Path = DATA_DIR):
@@ -105,18 +121,16 @@ class DatasetLoader:
 
         return samples
 
-    def load_dataset(self) -> Tuple[List[List[float]], List[int]]:
-        benign = self.load_file(os.getenv("BENIGN_DATA_PATH"))
-        jailbreak = self.load_file(os.getenv("JAILBREAK_DATA_PATH"))
+    def load_dataset(self) -> Tuple[List[List[float]], List[int], List[List[float]], List[int]]:
+        benign = preprocess(self.load_file(os.getenv("BENIGN_DATA_PATH")))
+        jailbreak = preprocess(self.load_file(os.getenv("JAILBREAK_DATA_PATH")))
+        data = benign + jailbreak
 
-        X, y = [], []
+        extractor = FeatureExtractor()
 
-        for text in benign:
-            X.append(extract_features(text))
-            y.append(0)
+        X_v = extractor.extract_features(data, use_vector=True)
+        y_v = [0] * len(benign) + [1] * len(jailbreak)
+        X = extractor.extract_features(data)
+        y = [0] * len(benign) + [1] * len(jailbreak)
 
-        for text in jailbreak:
-            X.append(extract_features(text))
-            y.append(1)
-
-        return X, y
+        return X, y, X_v, y_v

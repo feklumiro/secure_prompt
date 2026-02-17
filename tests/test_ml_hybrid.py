@@ -1,28 +1,31 @@
 import os
+import sys
 import pytest
 from pathlib import Path
 from dotenv import load_dotenv
-from secure_prompt.guards.regex_guard import RegexGuard
 from secure_prompt.core.preprocess import preprocess
+from secure_prompt.guards.ml_guard import MLGuard
+
 
 load_dotenv()
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+# чтобы тест можно было запускать напрямую
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 with open(DATA_DIR / os.getenv("JAILBREAK_DATA_PATH"), "r") as f:
     JAILBREAK = f.readlines()
 with open(DATA_DIR / os.getenv("BENIGN_DATA_PATH"), "r") as f:
     BENIGN = f.readlines()
 
-
+ml = MLGuard(use_vector=True)
 # ============== JAILBREAK TEST ==============
 @pytest.mark.parametrize("text", JAILBREAK)
 def test_jailbreak(text):
-    norm = preprocess(text)
-    r_guard = RegexGuard()
-    for i in norm:
-        r = r_guard.detect(norm[i])
-        print(norm[i], r)
-        if r.is_jailbreak:
+    res = ml.detect(preprocess([text]))
+    for i in res:
+        print(res)
+        if i.is_jailbreak:
             assert True
             return
     assert False
@@ -30,10 +33,9 @@ def test_jailbreak(text):
 
 # ============== BENIGN TEST ==============
 @pytest.mark.parametrize("text", BENIGN)
-def test_safe(text):
-    norm = preprocess(text)
-    r_guard = RegexGuard()
-    for i in norm:
-        if r_guard.detect(norm[i]).is_jailbreak: assert False
-    assert True
-
+def test_benign(text):
+    res = ml.detect(preprocess([text]))
+    for i in res:
+        print(res)
+        assert not i.is_jailbreak
+    return True
