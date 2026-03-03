@@ -11,15 +11,17 @@ class SecurityLogger:
         self,
         raw_prompt: str,
         decision: str,
+        probability: float,
         score: float,
-        reason: list[float]
+        features: list[float]
     ) -> None:
         event = SecurityEvent(
             timestamp=self._now(),
             event_type="input_check",
             decision=decision,
+            probability=probability,
             score=score,
-            reason=reason,
+            features=features,
             prompt_hash=SecurityEvent.hash_text(raw_prompt)
         )
         self.storage.write(event)
@@ -28,15 +30,17 @@ class SecurityLogger:
         self,
         response_text: str,
         decision: str,
+        probability: float,
         score: int,
-        reason: list[float]
+        features: list[float]
     ) -> None:
         event = SecurityEvent(
             timestamp=self._now(),
             event_type="response_check",
             decision=decision,
+            probability=probability,
             score=score,
-            reason=reason,
+            features=features,
             prompt_hash=SecurityEvent.hash_text(response_text),
         )
         self.storage.write(event)

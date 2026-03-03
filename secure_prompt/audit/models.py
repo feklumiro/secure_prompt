@@ -7,8 +7,9 @@ class SecurityEvent:
     timestamp: str
     event_type: str
     decision: str
+    probability: float
     score: float
-    reason: list[float]
+    features: list[float]
 
     prompt_hash: str = ""
 

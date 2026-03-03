@@ -10,7 +10,7 @@ class StorageBackend(Protocol):
 
 
 class JsonlStorage:
-    def __init__(self, path: str = "security.log.jsonl"):
+    def __init__(self, path: str = "log.jsonl"):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
 

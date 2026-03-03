@@ -5,11 +5,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score
 
-from ML.dataset import DatasetLoader
+from secure_prompt.features.feature_extractor import DatasetLoader
 
 
-MODEL_PATH_VECTOR = Path(__file__).resolve().parent / "model_vector.pkl"
-MODEL_PATH = Path(__file__).resolve().parent / "model.pkl"
+MODEL_PATH_VECTOR = Path(__file__).resolve().parent / "models" / "model_vector.pkl"
+MODEL_PATH = Path(__file__).resolve().parent / "models" / "model.pkl"
 
 
 def train():

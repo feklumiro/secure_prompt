@@ -4,7 +4,7 @@ import pytest
 from pathlib import Path
 from dotenv import load_dotenv
 from secure_prompt.core.preprocess import preprocess
-from secure_prompt.guards.ml_guard import MLGuard
+from secure_prompt.ML.ml_guard import MLGuard
 
 
 load_dotenv()

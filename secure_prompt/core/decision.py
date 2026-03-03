@@ -3,15 +3,16 @@ from dataclasses import dataclass
 from secure_prompt.audit.logger import SecurityLogger
 
 from secure_prompt.core.preprocess import preprocess
-from secure_prompt.guards.ml_guard import MLGuard
+from secure_prompt.ML.ml_guard import MLGuard
 from secure_prompt.core.scoring import PIPELINE_POLICY
 
 
 @dataclass
 class DecisionResult:
     verdict: str
+    probability: float
     score: float
-    reason: list[str]
+    features: list[float]
 
 
 class DecisionCore:
@@ -32,21 +33,25 @@ class DecisionCore:
 
         for i in range(len(prompts)):
             score_raw, score_norm = g_result[i].score, g_result[i+len(prompts)].score
-            score = max(score_raw, score_norm)
-            reason = g_result[i].features if score == score_raw else g_result[i+len(prompts)].features
+            ans = g_result[i+len(prompts)]
+            if score_raw > score_norm:
+                ans = g_result[i]
+            score = ans.score
+            prob = ans.probability
+            features = ans.features
             verdict = self._apply_policy(score)
-            if verdict == "ALLOW":
-                reason = []
             result.append(DecisionResult(
                 verdict=verdict,
+                probability=prob,
                 score=score,
-                reason=reason,
+                features=features,
             ))
             self.logger.log_input_check(
                 raw_prompt=prompts[i],
                 decision=verdict,
+                probability=prob,
                 score=score,
-                reason=reason
+                features=features
             )
 
         return result

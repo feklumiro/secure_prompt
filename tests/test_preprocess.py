@@ -21,7 +21,7 @@ ZERO_WIDTH_CASES = [
 
 @pytest.mark.parametrize("text", ZERO_WIDTH_CASES)
 def test_zero_width_normalization(text):
-    norm = preprocess(text)
+    norm = preprocess([text])
     assert "ignore" in "".join(norm.values())
 
 
@@ -42,7 +42,7 @@ SPACED_CASES = [
 
 @pytest.mark.parametrize("text", SPACED_CASES)
 def test_spaced_letters(text):
-    norm = preprocess(text)
+    norm = preprocess([text])
     assert "ignore" in "".join(norm.values())
 
 
@@ -63,7 +63,7 @@ BASE64_CASES = [
 
 @pytest.mark.parametrize("text", BASE64_CASES)
 def test_base64_decoding(text):
-    norm = preprocess(text)
+    norm = preprocess([text])
     assert "ignore" in "".join(norm.values())
 
 
@@ -81,5 +81,5 @@ SAFE_BASE64_LIKE = [
 
 @pytest.mark.parametrize("text", SAFE_BASE64_LIKE)
 def test_invalid_base64_not_decoded(text):
-    norm = preprocess(text)
+    norm = preprocess([text])
     assert text.lower() in norm.values()
