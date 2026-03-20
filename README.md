@@ -18,7 +18,7 @@ source env/bin/activate
 - Клонируйте репозиторий с гитхаб:
 ```bash
 git clone https://github.com/feklumiro/secure_prompt.git
-cd secure-prompt
+cd secure_prompt
 ```
 - Установите зависимости:
 ```bash
