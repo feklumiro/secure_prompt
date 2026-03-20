@@ -20,9 +20,12 @@ class DecisionCore:
         self.jail_score = PIPELINE_POLICY[bool(use_vector)]
         self.logger = SecurityLogger()
         self.guard = MLGuard(threshold=self.jail_score, use_vector=use_vector)
+        if use_vector and not self.guard.use_vector:
+            print("Exception while connecting to HuggingFace Hub, check your internet connection")
+            print("! Using non-vector model because no connection to HuggingFace Hub")
 
-    def _apply_policy(self, score: float) -> str:
-        if score >= self.jail_score:
+    def _apply_policy(self, prob: float) -> str:
+        if prob >= self.jail_score:
             return "BLOCK"
         return "ALLOW"
 
@@ -39,7 +42,7 @@ class DecisionCore:
             score = ans.score
             prob = ans.probability
             features = ans.features
-            verdict = self._apply_policy(score)
+            verdict = self._apply_policy(prob)
             result.append(DecisionResult(
                 verdict=verdict,
                 probability=prob,

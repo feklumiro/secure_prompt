@@ -13,7 +13,7 @@ roc-auc*
 *.pkl
 
 #Logging
-*.log*
+*log*
 
 # C extensions
 *.so

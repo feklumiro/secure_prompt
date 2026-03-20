@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import math
 import pickle
 from pathlib import Path
+from requests.exceptions import ConnectionError
 
 from secure_prompt.core.scoring import ML_JAIL_SCORE
 from secure_prompt.core.base import BaseResult
@@ -22,14 +23,18 @@ class MLResult(BaseResult):
 class MLGuard:
     def __init__(self, model_path: Path = None, use_vector: bool = False, threshold: float = ML_JAIL_SCORE):
         self.use_vector = use_vector
-        if not model_path and use_vector:
+        self.threshold = threshold
+        try:
+            self.feature_extractor = FeatureExtractor()
+        except ConnectionError:
+            self.use_vector = False
+            self.feature_extractor = FeatureExtractor(init_vector=False)
+        if not model_path and self.use_vector:
             model_path = MODEL_PATH_VECTOR
         elif not model_path:
             model_path = MODEL_PATH
         with open(model_path, "rb") as f:
             self.model = pickle.load(f)
-        self.threshold = threshold
-        self.feature_extractor = FeatureExtractor()
 
     def predict(self, x: list[list[float]]) -> list[list[float]]:
         return self.model.predict_proba(x)
@@ -39,7 +44,7 @@ class MLGuard:
         x = feats
         probs = self.predict(x)
         return [MLResult(
-            is_jailbreak=-math.log(1 - prob[1] + 1e-6) >= self.threshold,
+            is_jailbreak=prob[1] >= self.threshold,
             rules=None,
             probability=prob[1],
             score=-math.log(1 - prob[1] + 1e-6),

@@ -1,9 +1,10 @@
 import pickle
 from pathlib import Path
 
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.metrics import classification_report, roc_auc_score, accuracy_score
 
 from secure_prompt.features.feature_extractor import DatasetLoader
 
@@ -16,39 +17,34 @@ def train():
     loader = DatasetLoader()
     X, y, X_v, y_v = loader.load_dataset()
 
-    # VECTOR MODEL
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_v, y_v,
-        test_size=0.25,
-        random_state=42,
-        stratify=y_v
-    )
+    if loader.vector_import:
+        # VECTOR MODEL
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_v, y_v,
+            test_size=0.25,
+            random_state=42,
+            stratify=y_v
+        )
 
-    model = LogisticRegression(
-        max_iter=1000,
-        class_weight="balanced"
-    )
+        model = RandomForestClassifier(n_estimators=250, bootstrap=True, max_depth=15, min_samples_split=2, random_state=42)
 
-    model.fit(X_train, y_train)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        y_prob = model.predict_proba(X_test)[:, 1]
 
-    y_pred = model.predict(X_test)
-    y_prob = model.predict_proba(X_test)[:, 1]
-    print(model.intercept_)
-    print(model.coef_)
+        print("=== Classification report ===")
+        print(classification_report(y_test, y_pred))
 
-    print("=== Classification report ===")
-    print(classification_report(y_test, y_pred))
+        print("ROC-AUC:", roc_auc_score(y_test, y_prob))
+        print("ACCURACY:", accuracy_score(y_test, y_pred))
 
-    print("ROC-AUC:", roc_auc_score(y_test, y_prob))
+        with open(MODEL_PATH_VECTOR, "wb") as f:
+            pickle.dump(model, f)
 
-    with open(MODEL_PATH_VECTOR, "wb") as f:
-        pickle.dump(model, f)
+        print(f"Model with vector saved to {MODEL_PATH_VECTOR}")
 
-    print(f"Model with vector saved to {MODEL_PATH_VECTOR}")
-
-    for i in range(len(y_pred)):
-        if y_pred[i] != y_test[i]:
-            print("!!!!", X_test[i][:30], y_prob[i])
+    else:
+        print("Exception while connecting to HuggingFace Hub, check your internet connection")
 
     # NON-VECTOR MODEL
     X_train, X_test, y_train, y_test = train_test_split(
@@ -57,32 +53,23 @@ def train():
         random_state=42,
         stratify=y
     )
+    model_n = LogisticRegression(class_weight="balanced", max_iter=1000)
 
-    model = LogisticRegression(
-        max_iter=1000,
-        class_weight="balanced"
-    )
+    model_n.fit(X_train, y_train)
 
-    model.fit(X_train, y_train)
-
-    y_pred = model.predict(X_test)
-    y_prob = model.predict_proba(X_test)[:, 1]
-    print(model.intercept_)
-    print(model.coef_)
+    y_pred = model_n.predict(X_test)
+    y_prob = model_n.predict_proba(X_test)[:, 1]
 
     print("=== Classification report ===")
     print(classification_report(y_test, y_pred))
 
     print("ROC-AUC:", roc_auc_score(y_test, y_prob))
+    print("ACCURACY:", accuracy_score(y_test, y_pred))
 
     with open(MODEL_PATH, "wb") as f:
-        pickle.dump(model, f)
+        pickle.dump(model_n, f)
 
     print(f"Model saved to {MODEL_PATH}")
-
-    for i in range(len(y_pred)):
-        if y_pred[i] != y_test[i]:
-            print("!!!!", X_test[i][:30], y_prob[i])
 
 
 if __name__ == "__main__":

@@ -8,10 +8,11 @@ from secure_prompt.core.decision import DecisionCore
 load_dotenv()
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
-with open(DATA_DIR / os.getenv("JAILBREAK_DATA_PATH"), "r") as f:
+with open(DATA_DIR / os.getenv("JAILBREAK_TEST_PATH"), "r") as f:
     JAILBREAK = f.readlines()
-with open(DATA_DIR / os.getenv("BENIGN_DATA_PATH"), "r") as f:
+with open(DATA_DIR / os.getenv("BENIGN_TEST_PATH"), "r") as f:
     BENIGN = f.readlines()
+
 
 hybrid = DecisionCore()
 @pytest.mark.parametrize("text", JAILBREAK)

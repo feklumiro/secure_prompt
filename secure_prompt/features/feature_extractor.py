@@ -3,6 +3,7 @@ import os
 
 from pathlib import Path
 from typing import List, Tuple
+from requests.exceptions import ConnectionError
 
 from secure_prompt.core.preprocess import preprocess
 from secure_prompt.features.vector_features import VectorFeatureExtractor
@@ -38,6 +39,12 @@ class FeatureExtractor:
 class DatasetLoader:
     def __init__(self, data_dir: Path = DATA_DIR):
         self.data_dir = data_dir
+        self.vector_import = True
+        try:
+            self.extractor = FeatureExtractor()
+        except ConnectionError:
+            self.vector_import = False
+            self.extractor = FeatureExtractor(init_vector=False)
 
     def load_file(self, filename: str) -> List[str]:
         path = self.data_dir / filename
@@ -56,11 +63,11 @@ class DatasetLoader:
         jailbreak = preprocess(self.load_file(os.getenv("JAILBREAK_DATA_PATH")))
         data = benign + jailbreak
 
-        extractor = FeatureExtractor()
-
-        X_v = extractor.extract_features(data, use_vector=True)
-        y_v = [0] * len(benign) + [1] * len(jailbreak)
-        X = extractor.extract_features(data)
+        X = self.extractor.extract_features(data)
         y = [0] * len(benign) + [1] * len(jailbreak)
+        X_v, y_v = [], []
+        if self.vector_import:
+            X_v = self.extractor.extract_features(data, use_vector=True)
+            y_v = [0] * len(benign) + [1] * len(jailbreak)
 
         return X, y, X_v, y_v

@@ -6,10 +6,11 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional, List
 
 import faiss
-from sentence_transformers import SentenceTransformer
 
 from secure_prompt.core.scoring import VECTOR_JAIL_SCORE
 from data.lexical import VECTOR_TEMPLATES
+
+from sentence_transformers import SentenceTransformer
 
 from dotenv import load_dotenv
 
@@ -54,7 +55,7 @@ class VectorFeatureExtractor:
         os.makedirs(cache_dir, exist_ok=True)
 
         # Инициализация модели
-        self.model = SentenceTransformer(self.MODEL_NAME)
+        self.model = SentenceTransformer(self.MODEL_NAME, local_files_only=True)
 
         # Загружаем или вычисляем эмбеддинги шаблонов
         self.template_embeddings = None
