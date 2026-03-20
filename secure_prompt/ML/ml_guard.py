@@ -4,7 +4,7 @@ import pickle
 from pathlib import Path
 from requests.exceptions import ConnectionError
 
-from secure_prompt.core.scoring import ML_JAIL_SCORE
+from secure_prompt.core.scoring import PIPELINE_POLICY
 from secure_prompt.core.base import BaseResult
 from secure_prompt.features.feature_extractor import FeatureExtractor
 
@@ -21,8 +21,10 @@ class MLResult(BaseResult):
 
 
 class MLGuard:
-    def __init__(self, model_path: Path = None, use_vector: bool = False, threshold: float = ML_JAIL_SCORE):
+    def __init__(self, model_path: Path = None, use_vector: bool = False, threshold: float = None):
         self.use_vector = use_vector
+        if not threshold:
+            threshold = PIPELINE_POLICY[bool(use_vector)]
         self.threshold = threshold
         try:
             self.feature_extractor = FeatureExtractor()

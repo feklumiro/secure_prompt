@@ -7,8 +7,8 @@ from typing import Dict, Any, Optional, List
 
 import faiss
 
-from secure_prompt.core.scoring import VECTOR_JAIL_SCORE
 from data.lexical import VECTOR_TEMPLATES
+from secure_prompt.core.scoring import PIPELINE_POLICY
 
 from sentence_transformers import SentenceTransformer
 
@@ -33,7 +33,7 @@ class VectorFeatureExtractor:
     def __init__(
             self,
             templates: List[Dict] = VECTOR_TEMPLATES,
-            threshold: float = VECTOR_JAIL_SCORE,
+            threshold: float = PIPELINE_POLICY[1],
             use_faiss: bool = True,
             cache_dir: str = "./vector_cache",
             feature_config: Dict[str, bool] = None

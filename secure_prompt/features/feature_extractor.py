@@ -59,8 +59,8 @@ class DatasetLoader:
         return samples
 
     def load_dataset(self) -> Tuple[List[List[float]], List[int], List[List[float]], List[int]]:
-        benign = preprocess(self.load_file(os.getenv("BENIGN_DATA_PATH")))
-        jailbreak = preprocess(self.load_file(os.getenv("JAILBREAK_DATA_PATH")))
+        benign = preprocess(self.load_file(os.getenv("BENIGN_TRAIN_PATH")))
+        jailbreak = preprocess(self.load_file(os.getenv("JAILBREAK_TRAIN_PATH")))
         data = benign + jailbreak
 
         X = self.extractor.extract_features(data)
