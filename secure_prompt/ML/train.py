@@ -26,7 +26,7 @@ def train():
             stratify=y_v
         )
 
-        model = RandomForestClassifier(n_estimators=250, bootstrap=True, max_depth=15, min_samples_split=2, random_state=42)
+        model = RandomForestClassifier(n_estimators=250, bootstrap=True, max_depth=15, min_samples_split=2, min_samples_leaf=5, random_state=42)
 
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
