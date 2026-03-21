@@ -85,7 +85,7 @@ Non-vector модель будет сохранена в `/models/model.pkl`, ve
 
 Для запуска тестов выполните:
 ```bash
-python3 tests/test_pipeline.py
+python3 tests/pipeline_test.py
 ```
 
 Пороговые значения для моделей могут быть подобраны эмпирически, а также с помощью `threshold.py`:
